@@ -1,0 +1,15 @@
+PyQt6>=6.5.0
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
+
+# 安装说明：
+# 1. 确保已安装 ffmpeg（系统级依赖）
+#    Windows: 下载 ffmpeg 并添加到 PATH
+#    macOS: brew install ffmpeg
+#    Linux: sudo apt-get install ffmpeg
+#
+# 2. 使用 uv 安装依赖：
+#    uv pip install -r requirements.txt
+#
+# 3. 运行程序：
+#    python main.py
