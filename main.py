@@ -7,6 +7,11 @@
 
 import sys
 import os
+
+# 设置ffmpeg路径（在导入pydub之前）
+from ffmpeg_config import setup_ffmpeg
+setup_ffmpeg()
+
 from PyQt6.QtWidgets import QApplication
 from ui import MusicConverterUI
 from converter import MusicConverter

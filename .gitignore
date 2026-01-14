@@ -83,3 +83,11 @@ config_local.py
 !start.bat
 !test.py
 !å¿«é€Ÿå¼€å§‹.md
+
+# ´ò°üÉú³ÉµÄÎÄ¼ş
+dist/
+build/
+*.spec
+
+# ffmpeg¶ş½øÖÆÎÄ¼ş£¨Ì«´ó£¬²»Ìá½»£©
+ffmpeg/
