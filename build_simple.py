@@ -17,7 +17,7 @@ def build_exe():
     print("=" * 60)
     
     # 检查必要文件
-    required_files = ['main.py', 'converter.py', 'ui.py', 'language_manager.py', 'ffmpeg_config.py']
+    required_files = ['main.py', 'converter.py', 'ui.py', 'language_manager.py', 'ffmpeg_config.py', 'ffmpeg_patch.py']
     for file in required_files:
         if not os.path.exists(file):
             print(f"❌ 缺失必要文件: {file}")
@@ -49,6 +49,7 @@ def build_exe():
         '--add-data=ui.py;.',
         '--add-data=language_manager.py;.',
         '--add-data=ffmpeg_config.py;.',
+        '--add-data=ffmpeg_patch.py;.',
         '--add-data=ffmpeg;ffmpeg',
         'main.py'
     ]

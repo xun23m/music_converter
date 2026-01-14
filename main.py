@@ -12,6 +12,10 @@ import os
 from ffmpeg_config import setup_ffmpeg
 setup_ffmpeg()
 
+# 应用pydub黑窗口补丁
+from ffmpeg_patch import patch_pydub_for_no_window
+patch_pydub_for_no_window()
+
 from PyQt6.QtWidgets import QApplication
 from ui import MusicConverterUI
 from converter import MusicConverter
