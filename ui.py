@@ -6,6 +6,7 @@
 """
 
 import os
+from pathlib import Path
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QLabel, QLineEdit, QComboBox, 
                              QProgressBar, QTextEdit, QFileDialog, QGroupBox,
