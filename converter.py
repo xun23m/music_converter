@@ -143,7 +143,7 @@ class MusicConverter:
             gc.collect()
     
     def convert_folder(self, folder_path: str, output_format: str, 
-                      output_dir: str = None) -> bool:
+                      output_dir: str = None, source_formats: List[str] = None) -> bool:
         """
         转换整个文件夹的音乐文件（优化版）
         
@@ -151,6 +151,7 @@ class MusicConverter:
             folder_path: 输入文件夹路径
             output_format: 输出格式
             output_dir: 输出目录，如果为None则在原目录创建converted子文件夹
+            source_formats: 源文件格式列表，如果为None则处理所有支持的格式
             
         Returns:
             bool: 转换是否成功
@@ -160,15 +161,18 @@ class MusicConverter:
                 self._error(f"文件夹不存在: {folder_path}")
                 return False
             
+            # 确定要处理的格式
+            target_formats = source_formats if source_formats else self.SUPPORTED_INPUT_FORMATS
+            
             # 查找所有支持的音频文件（优化搜索）
             audio_files = []
-            for ext in self.SUPPORTED_INPUT_FORMATS:
+            for ext in target_formats:
                 # 使用大小写不敏感的搜索
                 audio_files.extend(Path(folder_path).glob(f"*.{ext}"))
                 audio_files.extend(Path(folder_path).glob(f"*.{ext.upper()}"))
             
             if not audio_files:
-                self._error(f"文件夹中没有找到支持的音频文件")
+                self._error(f"文件夹中没有找到匹配的音频文件")
                 return False
             
             # 设置输出目录
@@ -200,15 +204,19 @@ class MusicConverter:
                     futures.append((i, future, file_path.name))
                 
                 # 等待完成并收集结果
+                processed_count = 0
                 for i, future, filename in futures:
                     self._status(f"正在处理: {filename}")
-                    self._progress(int((i - 1) / total_files * 100))
                     
                     try:
                         if future.result(timeout=300):  # 5分钟超时
                             success_count += 1
                     except Exception as e:
                         self._error(f"转换 {filename} 失败: {str(e)}")
+                    
+                    processed_count += 1
+                    # 更新进度条：显示已处理文件的进度
+                    self._progress(int(processed_count / total_files * 100))
                     
                     # 定期强制垃圾回收
                     if i % 5 == 0:
@@ -227,7 +235,8 @@ class MusicConverter:
             return False
     
     def start_conversion(self, input_paths: List[str], output_format: str, 
-                        output_dir: str = None, is_batch: bool = False):
+                        output_dir: str = None, is_batch: bool = False,
+                        source_formats: List[str] = None):
         """
         开始转换（异步优化版）
         
@@ -236,6 +245,7 @@ class MusicConverter:
             output_format: 输出格式
             output_dir: 输出目录
             is_batch: 是否为批量转换模式
+            source_formats: 源文件格式筛选列表
         """
         if self.is_converting:
             self._error("已有转换任务正在进行")
@@ -249,10 +259,28 @@ class MusicConverter:
                 if is_batch or len(input_paths) > 1:
                     # 批量转换
                     if len(input_paths) == 1 and os.path.isdir(input_paths[0]):
-                        success = self.convert_folder(input_paths[0], output_format, output_dir)
+                        success = self.convert_folder(input_paths[0], output_format, output_dir, source_formats)
                     else:
                         # 多个文件转换 - 使用优化的批量处理
-                        total = len(input_paths)
+                        # 如果指定了源格式，先进行过滤
+                        if source_formats:
+                            filtered_paths = []
+                            for path in input_paths:
+                                ext = Path(path).suffix.lower()[1:]
+                                if ext in source_formats:
+                                    filtered_paths.append(path)
+                            current_paths = filtered_paths
+                        else:
+                            current_paths = input_paths
+                            
+                        if not current_paths:
+                            self._error("没有找到符合条件的源文件")
+                            self.is_converting = False
+                            if self.complete_callback:
+                                self.complete_callback(False)
+                            return
+
+                        total = len(current_paths)
                         success_count = 0
                         
                         # 使用线程池处理多个文件
@@ -261,9 +289,9 @@ class MusicConverter:
                         
                         with ThreadPoolExecutor(max_workers=max_workers) as executor:
                             futures = []
-                            for i, path in enumerate(input_paths, 1):
+                            for i, path in enumerate(current_paths, 1):
                                 self._status(f"提交任务 ({i}/{total}): {Path(path).name}")
-                                self._progress(int((i - 1) / total * 100))
+                                # 这里的进度条不更新，等待任务完成时更新
                                 future = executor.submit(
                                     self.convert_single_file, 
                                     path, 
@@ -273,6 +301,7 @@ class MusicConverter:
                                 futures.append((i, future, Path(path).name))
                             
                             # 等待结果
+                            processed_count = 0
                             for i, future, filename in futures:
                                 self._status(f"正在处理: {filename}")
                                 try:
@@ -280,6 +309,10 @@ class MusicConverter:
                                         success_count += 1
                                 except Exception as e:
                                     self._error(f"转换 {filename} 失败: {str(e)}")
+                                
+                                processed_count += 1
+                                # 更新进度条：显示已处理文件的进度
+                                self._progress(int(processed_count / total * 100))
                                 
                                 # 定期清理内存
                                 if i % 5 == 0:

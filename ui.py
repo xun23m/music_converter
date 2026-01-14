@@ -10,7 +10,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QLabel, QLineEdit, QComboBox, 
                              QProgressBar, QTextEdit, QFileDialog, QGroupBox,
-                             QFormLayout, QMessageBox)
+                             QFormLayout, QMessageBox, QCheckBox, QGridLayout)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject, QMimeData
 from PyQt6.QtGui import QFont, QPalette, QColor, QIcon, QDragEnterEvent, QDropEvent
 
@@ -38,8 +38,6 @@ class MusicConverterUI(QMainWindow):
         
         # 创建信号对象
         self.ui_signals = UISignals()
-        
-        # 托盘管理器（已删除）
         
         # 连接信号到槽函数
         self.ui_signals.progress_signal.connect(self.update_progress)
@@ -134,6 +132,10 @@ class MusicConverterUI(QMainWindow):
         input_group = self.create_input_group()
         main_layout.addWidget(input_group)
         
+        # 源格式筛选区域
+        source_format_group = self.create_source_format_group()
+        main_layout.addWidget(source_format_group)
+
         # 输出设置区域
         output_group = self.create_output_group()
         main_layout.addWidget(output_group)
@@ -168,17 +170,12 @@ class MusicConverterUI(QMainWindow):
         """)
         main_layout.addWidget(self.drag_hint)
         
-        # 托盘功能已删除
-        
-        # 菜单栏已删除（因为包含托盘相关功能）
-        
         # 更新UI语言
         self.update_ui_language()
         
-    def create_input_group(self):
-        """创建输入选择区域"""
-        group = QGroupBox("📁 输入选择")
-        group.setStyleSheet("""
+    def get_group_style(self):
+        """获取分组框样式"""
+        return """
             QGroupBox {
                 border: 2px solid #2d3748;
                 border-radius: 8px;
@@ -192,7 +189,12 @@ class MusicConverterUI(QMainWindow):
                 left: 10px;
                 padding: 0 5px;
             }
-        """)
+        """
+
+    def create_input_group(self):
+        """创建输入选择区域"""
+        group = QGroupBox("📁 输入选择")
+        group.setStyleSheet(self.get_group_style())
         
         layout = QVBoxLayout(group)
         
@@ -226,25 +228,72 @@ class MusicConverterUI(QMainWindow):
         layout.addWidget(self.path_display)
         
         return group
+
+    def create_source_format_group(self):
+        """创建源格式筛选区域"""
+        group = QGroupBox("源文件格式筛选")
+        group.setStyleSheet(self.get_group_style())
+        
+        layout = QVBoxLayout(group)
+        
+        # 格式复选框网格
+        grid_layout = QGridLayout()
+        self.source_format_checkboxes = {}
+        
+        row = 0
+        col = 0
+        max_cols = 5
+        
+        for fmt in self.converter.SUPPORTED_INPUT_FORMATS:
+            cb = QCheckBox(fmt.upper())
+            cb.setChecked(True)  # 默认全选
+            cb.setStyleSheet("QCheckBox { color: #e2e8f0; }")
+            self.source_format_checkboxes[fmt] = cb
+            grid_layout.addWidget(cb, row, col)
+            
+            col += 1
+            if col >= max_cols:
+                col = 0
+                row += 1
+        
+        layout.addLayout(grid_layout)
+        
+        # 控制按钮
+        btn_layout = QHBoxLayout()
+        
+        select_all_btn = QPushButton("全选")
+        select_all_btn.setStyleSheet(self.get_button_style("small"))
+        select_all_btn.clicked.connect(self.select_all_formats)
+        btn_layout.addWidget(select_all_btn)
+        
+        select_none_btn = QPushButton("清空")
+        select_none_btn.setStyleSheet(self.get_button_style("small"))
+        select_none_btn.clicked.connect(self.select_no_formats)
+        btn_layout.addWidget(select_none_btn)
+        
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+        
+        return group
+
+    def select_all_formats(self):
+        """全选源格式"""
+        for cb in self.source_format_checkboxes.values():
+            cb.setChecked(True)
+
+    def select_no_formats(self):
+        """清空源格式"""
+        for cb in self.source_format_checkboxes.values():
+            cb.setChecked(False)
+
+    def get_selected_source_formats(self):
+        """获取选中的源格式列表"""
+        return [fmt for fmt, cb in self.source_format_checkboxes.items() if cb.isChecked()]
     
     def create_output_group(self):
         """创建输出设置区域"""
         group = QGroupBox("⚙️ 输出设置")
-        group.setStyleSheet("""
-            QGroupBox {
-                border: 2px solid #2d3748;
-                border-radius: 8px;
-                margin-top: 1ex;
-                padding-top: 15px;
-                font-weight: bold;
-                color: #e2e8f0;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
+        group.setStyleSheet(self.get_group_style())
         
         layout = QFormLayout(group)
         layout.setSpacing(10)
@@ -294,21 +343,7 @@ class MusicConverterUI(QMainWindow):
     def create_control_group(self):
         """创建控制按钮区域"""
         group = QGroupBox("🎮 转换控制")
-        group.setStyleSheet("""
-            QGroupBox {
-                border: 2px solid #2d3748;
-                border-radius: 8px;
-                margin-top: 1ex;
-                padding-top: 15px;
-                font-weight: bold;
-                color: #e2e8f0;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
+        group.setStyleSheet(self.get_group_style())
         
         layout = QHBoxLayout(group)
         
@@ -336,21 +371,7 @@ class MusicConverterUI(QMainWindow):
     def create_progress_group(self):
         """创建进度显示区域"""
         group = QGroupBox("📊 进度显示")
-        group.setStyleSheet("""
-            QGroupBox {
-                border: 2px solid #2d3748;
-                border-radius: 8px;
-                margin-top: 1ex;
-                padding-top: 15px;
-                font-weight: bold;
-                color: #e2e8f0;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
+        group.setStyleSheet(self.get_group_style())
         
         layout = QVBoxLayout(group)
         
@@ -391,26 +412,10 @@ class MusicConverterUI(QMainWindow):
         
         return group
     
-    # 资源监控和进度预测功能已删除
-    
     def create_log_group(self):
         """创建日志区域"""
         group = QGroupBox("📝 操作日志")
-        group.setStyleSheet("""
-            QGroupBox {
-                border: 2px solid #2d3748;
-                border-radius: 8px;
-                margin-top: 1ex;
-                padding-top: 15px;
-                font-weight: bold;
-                color: #e2e8f0;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
+        group.setStyleSheet(self.get_group_style())
         
         layout = QVBoxLayout(group)
         
@@ -658,10 +663,15 @@ class MusicConverterUI(QMainWindow):
                     }}
                 """)
         
+        # 更新复选框样式
+        for cb in self.findChildren(QCheckBox):
+             cb.setStyleSheet(f"QCheckBox {{ color: {text_color}; }}")
+
         # 更新按钮样式（保持原有颜色，只调整边框）
         for btn in self.findChildren(QPushButton):
             if btn.text() in ["开始转换", "停止", "清空选择", "选择音乐文件", 
-                            "选择音乐文件夹", "选择目录", "选择音乐文件", "选择音乐文件夹"]:
+                            "选择音乐文件夹", "选择目录", "选择音乐文件", "选择音乐文件夹",
+                            "全选", "清空", "Select All", "Select None"]:
                 # 保持原有按钮颜色，只更新边框
                 pass
     
@@ -785,6 +795,12 @@ class MusicConverterUI(QMainWindow):
         output_format = self.format_combo.currentText()
         output_dir = self.output_dir_input.text().strip() or None
         
+        # 获取源格式筛选
+        source_formats = self.get_selected_source_formats()
+        if not source_formats:
+            self.show_error("请至少选择一种源文件格式！")
+            return
+
         # 检查是否为批量模式
         is_batch = len(self.selected_paths) > 1 or (
             len(self.selected_paths) == 1 and os.path.isdir(self.selected_paths[0])
@@ -802,6 +818,8 @@ class MusicConverterUI(QMainWindow):
             self.add_log(f"预估文件数: {total_files} 个")
         else:
             self.add_log("模式: 单文件转换")
+            
+        self.add_log(f"源格式筛选: {', '.join(source_formats)}")
         
         # 更新UI状态
         self.start_btn.setEnabled(False)
@@ -819,7 +837,8 @@ class MusicConverterUI(QMainWindow):
             self.selected_paths,
             output_format,
             output_dir,
-            is_batch
+            is_batch,
+            source_formats=source_formats
         )
     
     def _count_files(self, paths):
@@ -1039,6 +1058,8 @@ class MusicConverterUI(QMainWindow):
                     group.setTitle(self.lang.get_text("group_progress"))
                 elif "日志" in title or "Log" in title:
                     group.setTitle(self.lang.get_text("group_log"))
+                elif "源文件" in title or "Source" in title:
+                    group.setTitle(self.lang.get_text("label_source_formats"))
         
         # 更新按钮文本
         for btn in self.findChildren(QPushButton):
@@ -1055,6 +1076,10 @@ class MusicConverterUI(QMainWindow):
                 btn.setText(self.lang.get_text("btn_stop"))
             elif text in ["清空选择", "Clear Selection"]:
                 btn.setText(self.lang.get_text("btn_clear"))
+            elif text in ["全选", "Select All"]:
+                btn.setText(self.lang.get_text("btn_select_all"))
+            elif text in ["清空", "Select None"]:
+                btn.setText(self.lang.get_text("btn_select_none"))
         
         # 更新标签文本
         for label in self.findChildren(QLabel):

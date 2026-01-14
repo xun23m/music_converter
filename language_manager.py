@@ -34,15 +34,21 @@ class LanguageManager:
                 
                 # 标签文本
                 "label_format": "输出格式:",
+                "label_source_formats": "源文件格式:",
                 "label_output_dir": "输出目录:",
                 "label_drag_hint": "💡 提示：也可以直接拖拽文件或文件夹到此窗口",
                 "label_status_ready": "准备就绪",
+                
+                # 筛选按钮
+                "btn_select_all": "全选",
+                "btn_select_none": "清空",
                 
                 # 日志消息
                 "log_selected_files": "选择了 {count} 个文件",
                 "log_selected_folder": "选择了文件夹: {path}",
                 "log_output_dir_set": "输出目录设置为: {path}",
                 "log_conversion_start": "开始转换 -> 格式: {format}",
+                "log_source_formats": "源文件格式筛选: {formats}",
                 "log_output_dir": "输出目录: {path}",
                 "log_mode_batch": "模式: 批量转换",
                 "log_mode_single": "模式: 单文件转换",
@@ -119,15 +125,21 @@ class LanguageManager:
                 
                 # 标签文本
                 "label_format": "Output Format:",
+                "label_source_formats": "Source Formats:",
                 "label_output_dir": "Output Directory:",
                 "label_drag_hint": "💡 Tip: You can also drag and drop files or folders to this window",
                 "label_status_ready": "Ready",
+                
+                # 筛选按钮
+                "btn_select_all": "Select All",
+                "btn_select_none": "Select None",
                 
                 # 日志消息
                 "log_selected_files": "Selected {count} files",
                 "log_selected_folder": "Selected folder: {path}",
                 "log_output_dir_set": "Output directory set to: {path}",
                 "log_conversion_start": "Starting conversion -> Format: {format}",
+                "log_source_formats": "Source format filter: {formats}",
                 "log_output_dir": "Output directory: {path}",
                 "log_mode_batch": "Mode: Batch conversion",
                 "log_mode_single": "Mode: Single file conversion",
