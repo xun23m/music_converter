@@ -22,8 +22,6 @@ class UISignals(QObject):
     status_signal = pyqtSignal(str)
     error_signal = pyqtSignal(str)
     complete_signal = pyqtSignal(bool)
-    resource_signal = pyqtSignal(dict)      # 资源状态信号
-    prediction_signal = pyqtSignal(dict)    # 进度预测信号
 
 class MusicConverterUI(QMainWindow):
     """主界面类"""
@@ -54,27 +52,8 @@ class MusicConverterUI(QMainWindow):
             lambda v: self.ui_signals.progress_signal.emit(v),
             lambda m: self.ui_signals.status_signal.emit(m),
             lambda e: self.ui_signals.error_signal.emit(e),
-            lambda s: self.ui_signals.complete_signal.emit(s),
-            lambda r: self.ui_signals.resource_signal.emit(r),      # 资源监控回调
-            lambda p: self.ui_signals.prediction_signal.emit(p)     # 进度预测回调
+            lambda s: self.ui_signals.complete_signal.emit(s)
         )
-        
-        # 连接新增的信号
-        self.ui_signals.resource_signal.connect(self.update_resource_status)
-        self.ui_signals.prediction_signal.connect(self.update_prediction)
-        
-        # 资源监控状态
-        self.resource_status = {
-            'cpu_percent': 0,
-            'memory_percent': 0,
-            'disk_percent': 0,
-            'available_workers': 4,
-            'status': 'normal',
-        }
-        self.prediction_info = {
-            'remaining_time': 0,
-            'progress_percent': 0,
-        }
         
         self.init_ui()
         self.apply_dark_theme()
@@ -166,10 +145,6 @@ class MusicConverterUI(QMainWindow):
         # 进度显示区域
         progress_group = self.create_progress_group()
         main_layout.addWidget(progress_group)
-        
-        # 资源监控和进度预测区域
-        monitor_group = self.create_monitor_group()
-        main_layout.addWidget(monitor_group)
         
         # 日志区域
         log_group = self.create_log_group()
@@ -416,83 +391,7 @@ class MusicConverterUI(QMainWindow):
         
         return group
     
-    def create_monitor_group(self):
-        """创建资源监控和进度预测区域"""
-        group = QGroupBox("🔍 资源监控 & 📊 进度预测")
-        group.setStyleSheet("""
-            QGroupBox {
-                border: 2px solid #2d3748;
-                border-radius: 8px;
-                margin-top: 1ex;
-                padding-top: 15px;
-                font-weight: bold;
-                color: #e2e8f0;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
-        
-        layout = QVBoxLayout(group)
-        
-        # 资源状态显示
-        self.resource_label = QLabel("CPU: 0% | 内存: 0% | 磁盘: 0%")
-        self.resource_label.setStyleSheet("""
-            QLabel {
-                color: #a0aec0;
-                font-size: 12px;
-                padding: 5px;
-                background-color: #1a202c;
-                border-radius: 4px;
-                font-family: Consolas, monospace;
-            }
-        """)
-        layout.addWidget(self.resource_label)
-        
-        # 进度预测显示
-        self.prediction_label = QLabel("预计剩余时间: --")
-        self.prediction_label.setStyleSheet("""
-            QLabel {
-                color: #4a9eff;
-                font-size: 12px;
-                padding: 5px;
-                background-color: #1a202c;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-        """)
-        layout.addWidget(self.prediction_label)
-        
-        # 并发数显示
-        self.workers_label = QLabel("当前推荐并发数: 4")
-        self.workers_label.setStyleSheet("""
-            QLabel {
-                color: #fbbf24;
-                font-size: 12px;
-                padding: 5px;
-                background-color: #1a202c;
-                border-radius: 4px;
-            }
-        """)
-        layout.addWidget(self.workers_label)
-        
-        # 状态指示器
-        self.status_indicator = QLabel("🟢 系统状态: 正常")
-        self.status_indicator.setStyleSheet("""
-            QLabel {
-                color: #10b981;
-                font-size: 13px;
-                padding: 5px;
-                background-color: #1a202c;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-        """)
-        layout.addWidget(self.status_indicator)
-        
-        return group
+    # 资源监控和进度预测功能已删除
     
     def create_log_group(self):
         """创建日志区域"""
@@ -991,98 +890,7 @@ class MusicConverterUI(QMainWindow):
             self.log_text.verticalScrollBar().maximum()
         )
     
-    def update_resource_status(self, status: dict):
-        """更新资源状态显示"""
-        self.resource_status = status
-        
-        cpu = status['cpu_percent']
-        memory = status['memory_percent']
-        disk = status['disk_percent']
-        
-        self.resource_label.setText(f"CPU: {cpu:.1f}% | 内存: {memory:.1f}% | 磁盘: {disk:.1f}%")
-        
-        # 更新状态指示器
-        status_text = status['status']
-        if status_text == 'critical':
-            self.status_indicator.setText("🔴 系统状态: 紧张")
-            self.status_indicator.setStyleSheet("""
-                QLabel {
-                    color: #ef4444;
-                    font-size: 13px;
-                    padding: 5px;
-                    background-color: #1a202c;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-            """)
-        elif status_text == 'warning':
-            self.status_indicator.setText("🟡 系统状态: 警告")
-            self.status_indicator.setStyleSheet("""
-                QLabel {
-                    color: #f59e0b;
-                    font-size: 13px;
-                    padding: 5px;
-                    background-color: #1a202c;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-            """)
-        else:
-            self.status_indicator.setText("🟢 系统状态: 正常")
-            self.status_indicator.setStyleSheet("""
-                QLabel {
-                    color: #10b981;
-                    font-size: 13px;
-                    padding: 5px;
-                    background-color: #1a202c;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-            """)
-        
-        # 更新并发数
-        workers = status['available_workers']
-        self.workers_label.setText(f"当前推荐并发数: {workers}")
-        
-        # 在日志中显示警告
-        if status_text == 'critical':
-            self.add_log(f"⚠️ 资源紧张! CPU: {cpu:.1f}%, 内存: {memory:.1f}%")
-        elif status_text == 'warning':
-            self.add_log(f"⚡ 资源警告: CPU: {cpu:.1f}%, 内存: {memory:.1f}%")
-    
-    def update_prediction(self, prediction: dict):
-        """更新进度预测显示"""
-        self.prediction_info = prediction
-        
-        remaining = prediction['remaining_time']
-        progress = prediction['progress_percent']
-        processed = prediction['processed']
-        total = prediction['total']
-        
-        # 格式化剩余时间
-        if remaining <= 0 or processed == 0:
-            time_text = "预计剩余时间: --"
-        else:
-            if remaining < 60:
-                time_text = f"预计剩余时间: {remaining:.0f}秒"
-            elif remaining < 3600:
-                minutes = int(remaining // 60)
-                seconds = int(remaining % 60)
-                time_text = f"预计剩余时间: {minutes}分{seconds}秒"
-            else:
-                hours = int(remaining // 3600)
-                minutes = int((remaining % 3600) // 60)
-                time_text = f"预计剩余时间: {hours}小时{minutes}分"
-        
-        # 添加进度信息
-        if processed > 0:
-            time_text += f" (进度: {processed}/{total})"
-        
-        self.prediction_label.setText(time_text)
-        
-        # 在状态标签中显示预测信息
-        if processed > 0 and remaining > 0:
-            self.status_label.setText(f"正在转换... 进度: {progress:.1f}% | {time_text}")
+    # 资源监控和进度预测功能已删除
     
     def update_button_states(self):
         """更新按钮状态（优化版）"""
@@ -1098,27 +906,10 @@ class MusicConverterUI(QMainWindow):
             if btn.text() in ["选择音乐文件", "选择音乐文件夹", "选择目录", "清空选择"]:
                 btn.setEnabled(not is_converting)
         
-        # 转换完成后清理内存和重置监控显示
+        # 转换完成后清理内存
         if not is_converting:
             import gc
             gc.collect()
-            
-            # 重置监控显示
-            if hasattr(self, 'resource_label'):
-                self.resource_label.setText("CPU: 0% | 内存: 0% | 磁盘: 0%")
-                self.prediction_label.setText("预计剩余时间: --")
-                self.workers_label.setText("当前推荐并发数: 4")
-                self.status_indicator.setText("🟢 系统状态: 正常")
-                self.status_indicator.setStyleSheet("""
-                    QLabel {
-                        color: #10b981;
-                        font-size: 13px;
-                        padding: 5px;
-                        background-color: #1a202c;
-                        border-radius: 4px;
-                        font-weight: bold;
-                    }
-                """)
     
     def dragEnterEvent(self, event: QDragEnterEvent):
         """拖拽进入事件"""
