@@ -151,10 +151,6 @@ uv pip install -r requirements.txt
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
-## 📄 License
-
-This project is open source and free to use.
-
 ## 🙏 Credits
 
 Developed by AI Assistant with modern GUI design and thread-safe architecture.
